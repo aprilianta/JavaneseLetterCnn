@@ -1,12 +1,12 @@
+from __future__ import print_function
 import argparse
 import io
 import os
-
 import tensorflow as tf
 from tensorflow.python.tools import freeze_graph
 from tensorflow.python.tools import optimize_for_inference_lib
 import numpy as np
-
+import matplotlib.pyplot as plt
 
 SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
 
@@ -14,17 +14,36 @@ SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
 DEFAULT_LABEL_FILE = os.path.join(SCRIPT_PATH,
                                   'labels/label_aksara.txt')
 DEFAULT_TFRECORDS_DIR = os.path.join(SCRIPT_PATH, 'tfrecords-output-irene')
-DEFAULT_OUTPUT_DIR = os.path.join(SCRIPT_PATH, 'saved-model-seminar')
+DEFAULT_OUTPUT_DIR = os.path.join(SCRIPT_PATH, 'saved-model-dadar')
 
-MODEL_NAME = 'dataset_seminar'
+MODEL_NAME = 'dataset_confusion'
 IMAGE_WIDTH = 64
 IMAGE_HEIGHT = 64
 
-DEFAULT_NUM_EPOCHS = 1000
+DEFAULT_NUM_EPOCHS = 100
 BATCH_SIZE = 100
 
 # This will be determined by the number of entries in the given label file.
 num_classes = 48
+
+
+def plot_confusion_matrix(confusion):
+    print(confusion)
+
+    # Plot the confusion matrix as an image.
+    plt.matshow(confusion)
+
+    # Make various adjustments to the plot.
+    plt.colorbar()
+    tick_marks = np.arange(num_classes)
+    plt.xticks(tick_marks, range(num_classes))
+    plt.yticks(tick_marks, range(num_classes))
+    plt.xlabel('Predicted')
+    plt.ylabel('True')
+
+    # Ensure the plot is shown correctly with multiple plots
+    # in a single Notebook cell.
+    plt.show()
 
 
 def _parse_function(example):
@@ -41,7 +60,7 @@ def _parse_function(example):
     # Decode JPEG.
     image = tf.image.decode_jpeg(image_encoded, channels=1)
     image = tf.image.convert_image_dtype(image, dtype=tf.float32)
-    image = tf.reshape(image, [IMAGE_WIDTH*IMAGE_HEIGHT])
+    image = tf.reshape(image, [IMAGE_WIDTH * IMAGE_HEIGHT])
 
     # Represent the label as a one hot vector.
     label = tf.stack(tf.one_hot(label, num_classes))
@@ -70,8 +89,8 @@ def export_model(model_output_dir, input_node_names, output_node_name):
         input_graph_def.ParseFromString(f.read())
 
     output_graph_def = optimize_for_inference_lib.optimize_for_inference(
-            input_graph_def, input_node_names, [output_node_name],
-            tf.float32.as_datatype_enum)
+        input_graph_def, input_node_names, [output_node_name],
+        tf.float32.as_datatype_enum)
 
     optimized_graph_file = os.path.join(model_output_dir,
                                         'optimized_' + MODEL_NAME + '.pb')
@@ -131,7 +150,7 @@ def main(label_file, tfrecords_dir, model_output_dir, num_train_epochs):
     # Buat model ....
 
     # Placeholder buat masukan image data.
-    x = tf.placeholder(tf.float32, [None, IMAGE_WIDTH*IMAGE_HEIGHT],
+    x = tf.placeholder(tf.float32, [None, IMAGE_WIDTH * IMAGE_HEIGHT],
                        name=input_node_name)
     # Placeholder buat masukan label data. Labels --> one_hot vectors.
     y_ = tf.placeholder(tf.float32, [None, num_classes])
@@ -144,6 +163,7 @@ def main(label_file, tfrecords_dir, model_output_dir, num_train_epochs):
     b_conv1 = bias_variable([32])
     x_conv1 = tf.nn.conv2d(x_image, W_conv1, strides=[1, 1, 1, 1],
                            padding='SAME')
+
     h_conv1 = tf.nn.relu(x_conv1 + b_conv1)
 
     # Max-pooling pertama.
@@ -171,8 +191,8 @@ def main(label_file, tfrecords_dir, model_output_dir, num_train_epochs):
                              strides=[1, 2, 2, 1], padding='SAME')
 
     # Fully connected layer. Layer berisi 1024 neuron
-    h_pool_flat = tf.reshape(h_pool3, [-1, 8*8*128])
-    W_fc1 = weight_variable([8*8*128, 1024])
+    h_pool_flat = tf.reshape(h_pool3, [-1, 8 * 8 * 128])
+    W_fc1 = weight_variable([8 * 8 * 128, 1024])
     b_fc1 = bias_variable([1024])
     h_fc1 = tf.nn.relu(tf.matmul(h_pool_flat, W_fc1) + b_fc1)
 
@@ -188,7 +208,6 @@ def main(label_file, tfrecords_dir, model_output_dir, num_train_epochs):
     # Untuk saved model
     tf.nn.softmax(y, name=output_node_name)
 
-
     # Define our loss.
     cross_entropy = tf.reduce_mean(
         tf.nn.softmax_cross_entropy_with_logits_v2(
@@ -197,16 +216,14 @@ def main(label_file, tfrecords_dir, model_output_dir, num_train_epochs):
         )
     )
 
-
     # Define optimizer for minimizing loss. Learning rate 0.0001 AdamOptimizer
     train_step = tf.train.AdamOptimizer(0.0001).minimize(cross_entropy)
 
     # Define accuracy.
+
     correct_prediction = tf.equal(tf.argmax(y, 1), tf.argmax(y_, 1))
     correct_prediction = tf.cast(correct_prediction, tf.float32)
     accuracy = tf.reduce_mean(correct_prediction)
-
-    confusion_matrix_tf = tf.confusion_matrix( tf.argmax( y, 1 ), tf.argmax( y_, 1 ) )
 
     saver = tf.train.Saver()
 
@@ -235,14 +252,14 @@ def main(label_file, tfrecords_dir, model_output_dir, num_train_epochs):
                                                 y_: train_labels,
                                                 keep_prob: 0.5})
 
-                if step % 100 == 0:
+                if step % 1 == 0:
                     train_accuracy = sess.run(
                         accuracy,
                         feed_dict={x: train_images, y_: train_labels,
                                    keep_prob: 1.0}
                     )
-                    train_loss = sess.run(cross_entropy, feed_dict={x: train_images, y_: train_labels
-                                                              ,keep_prob:1.0})
+                    train_loss = sess.run(cross_entropy,
+                                          feed_dict={x: train_images, y_: train_labels, keep_prob: 1.0})
                     print("Step %d, Training Accuracy %g, Loss %g" %
                           (step, float(train_accuracy), float(train_loss)))
 
@@ -259,8 +276,9 @@ def main(label_file, tfrecords_dir, model_output_dir, num_train_epochs):
         saver.save(sess, checkpoint_file)
 
         # See how model did by running the testing set through the model.
-        print('Testing model...')
-
+        print('\n========================')
+        print('==  Testing model...  ==')
+        print('========================')
         # Create testing dataset input pipeline.
         test_dataset = tf.data.TFRecordDataset(test_data_files) \
             .map(_parse_function) \
@@ -272,32 +290,54 @@ def main(label_file, tfrecords_dir, model_output_dir, num_train_epochs):
         accuracy2 = tf.reduce_sum(correct_prediction)
         total_correct_preds = 0
         total_preds = 0
+        confusion = np.zeros((num_classes, num_classes)).astype(int)
 
         try:
             iterator = test_dataset.make_one_shot_iterator()
             batch = iterator.get_next()
             while True:
                 test_images, test_labels = sess.run(batch)
-                acc = sess.run(accuracy2, feed_dict={x: test_images,
-                                                     y_: test_labels,
-                                                     keep_prob: 1.0})
-                total_preds += len(test_images)
-                total_correct_preds += acc
+                y_p = tf.argmax(y, 1)
+                val_accuracy, y_pred = sess.run([accuracy2, y_p], feed_dict={x: test_images, y_: test_labels,
+                                                                             keep_prob: 1.0})
 
+                y_true = np.argmax(test_labels, 1)
+                confusion += sess.run(tf.confusion_matrix(y_true,
+                                                          y_pred, num_classes))
+                total_preds += len(test_images)
+                total_correct_preds += val_accuracy
         except tf.errors.OutOfRangeError:
             pass
 
-        # test_accuracy = total_correct_preds/total_preds
-        # print("Testing Accuracy {}".format(test_accuracy))
+        test_accuracy = total_correct_preds / total_preds
+        print("Total Correct Predictions : ", total_correct_preds)
+        print("Total Predictions : ", total_preds)
+        print("Testing Accuracy : {} ".format(test_accuracy))
+        np.set_printoptions(threshold=100000, precision=2)
+        # total = 0
+        # for i in range(num_classes):
+        #     total += np.sum(confusion[i])
+        # print("total", total)
 
-        cm = confusion_matrix_tf.eval( feed_dict = {x: train_images, y_: train_labels, keep_prob: 1.0} )
-        np.set_printoptions(threshold=np.inf)
-        print( "\n\nConfusion Matrix =\n\n", cm)
+        TruePositive = np.diag(confusion)
+        print("\nTrue Positive for each class : \n", TruePositive)
+        FalsePositive = []
+        for i in range(num_classes):
+            FalsePositive.append(sum(confusion[:, i]) - confusion[i, i])
+        print("\nFalse Positive for each class : \n", FalsePositive)
+        FalseNegative = []
+        for i in range(num_classes):
+            FalseNegative.append(sum(confusion[i, :]) - confusion[i, i])
+        print("\nFalse Negative for each class : \n", FalseNegative)
+        TrueNegative = []
+        for i in range(num_classes):
+            temp = np.delete(confusion, i, 0)  # delete ith row
+            temp = np.delete(temp, i, 1)  # delete ith column
+            TrueNegative.append(sum(sum(temp)))
+        print("\nTrue Negative for each class : \n", TrueNegative)
 
-
-        test_accuracy = total_correct_preds/total_preds
-        print("Testing Accuracy {}".format(test_accuracy))
-
+        print("\nConfusion Matrix : ")
+        plot_confusion_matrix(confusion)
 
         export_model(model_output_dir, [input_node_name, keep_prob_node_name],
                      output_node_name)
