@@ -14,9 +14,9 @@ SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
 DEFAULT_LABEL_FILE = os.path.join(SCRIPT_PATH,
                                   'labels/label_aksara.txt')
 DEFAULT_TFRECORDS_DIR = os.path.join(SCRIPT_PATH, 'tfrecords-output-irene')
-DEFAULT_OUTPUT_DIR = os.path.join(SCRIPT_PATH, 'saved-model-dadar')
+DEFAULT_OUTPUT_DIR = os.path.join(SCRIPT_PATH, 'saved-model-nyobapres')
 
-MODEL_NAME = 'dataset_confusion'
+MODEL_NAME = 'dataset_nyobapres'
 IMAGE_WIDTH = 64
 IMAGE_HEIGHT = 64
 
@@ -208,7 +208,7 @@ def main(label_file, tfrecords_dir, model_output_dir, num_train_epochs):
     # Untuk saved model
     tf.nn.softmax(y, name=output_node_name)
 
-    # Define our loss.
+    # Define loss.
     cross_entropy = tf.reduce_mean(
         tf.nn.softmax_cross_entropy_with_logits_v2(
             labels=tf.stop_gradient(y_),
@@ -216,11 +216,10 @@ def main(label_file, tfrecords_dir, model_output_dir, num_train_epochs):
         )
     )
 
-    # Define optimizer for minimizing loss. Learning rate 0.0001 AdamOptimizer
+    # Define optimizer untuk minimalkan loss. Learning rate 0.0001 AdamOptimizer
     train_step = tf.train.AdamOptimizer(0.0001).minimize(cross_entropy)
 
     # Define accuracy.
-
     correct_prediction = tf.equal(tf.argmax(y, 1), tf.argmax(y_, 1))
     correct_prediction = tf.cast(correct_prediction, tf.float32)
     accuracy = tf.reduce_mean(correct_prediction)
@@ -228,12 +227,12 @@ def main(label_file, tfrecords_dir, model_output_dir, num_train_epochs):
     saver = tf.train.Saver()
 
     with tf.Session() as sess:
-        # Initialize the variables.
+        # Inisiasi semua variabel.
         sess.run(tf.global_variables_initializer())
 
         checkpoint_file = os.path.join(model_output_dir, MODEL_NAME + '.chkp')
 
-        # Save the graph definition to a file.
+        # Simpan graph ke dalam bentuk file.
         tf.train.write_graph(sess.graph_def, model_output_dir,
                              MODEL_NAME + '.pbtxt', True)
 
@@ -244,10 +243,10 @@ def main(label_file, tfrecords_dir, model_output_dir, num_train_epochs):
 
             while True:
 
-                # Get a batch of images and their corresponding labels.
+                # Dapatkan batch images dan label.
                 train_images, train_labels = sess.run(batch)
 
-                # Perform the training step, feeding in the batches.
+                # Proses pelatihan dengan memasukkan batch
                 sess.run(train_step, feed_dict={x: train_images,
                                                 y_: train_labels,
                                                 keep_prob: 0.5})
@@ -263,7 +262,7 @@ def main(label_file, tfrecords_dir, model_output_dir, num_train_epochs):
                     print("Step %d, Training Accuracy %g, Loss %g" %
                           (step, float(train_accuracy), float(train_loss)))
 
-                # Every 10,000 iterations, we save a checkpoint of the model.
+                # Setiap 10.000 iterasi, simpan checkpoint model.
                 if step % 10000 == 0:
                     saver.save(sess, checkpoint_file, global_step=step)
 
@@ -272,7 +271,7 @@ def main(label_file, tfrecords_dir, model_output_dir, num_train_epochs):
         except tf.errors.OutOfRangeError:
             pass
 
-        # Save a checkpoint after training has completed.
+        # Simpan checkpoint setelah pelatihan selesai.
         saver.save(sess, checkpoint_file)
 
         # See how model did by running the testing set through the model.
@@ -298,21 +297,20 @@ def main(label_file, tfrecords_dir, model_output_dir, num_train_epochs):
             while True:
                 test_images, test_labels = sess.run(batch)
                 y_p = tf.argmax(y, 1)
-                val_accuracy, y_pred = sess.run([accuracy2, y_p], feed_dict={x: test_images, y_: test_labels,
-                                                                             keep_prob: 1.0})
+                jml, y_pred = sess.run([accuracy2, y_p], feed_dict={x: test_images, y_: test_labels,
+                                                                    keep_prob: 1.0})
 
                 y_true = np.argmax(test_labels, 1)
                 confusion += sess.run(tf.confusion_matrix(y_true,
                                                           y_pred, num_classes))
                 total_preds += len(test_images)
-                total_correct_preds += val_accuracy
+                total_correct_preds += jml
         except tf.errors.OutOfRangeError:
             pass
 
         test_accuracy = total_correct_preds / total_preds
         print("Total Correct Predictions : ", total_correct_preds)
         print("Total Predictions : ", total_preds)
-        print("Testing Accuracy : {} ".format(test_accuracy))
         np.set_printoptions(threshold=100000, precision=2)
         # total = 0
         # for i in range(num_classes):
@@ -335,6 +333,19 @@ def main(label_file, tfrecords_dir, model_output_dir, num_train_epochs):
             temp = np.delete(temp, i, 1)  # delete ith column
             TrueNegative.append(sum(sum(temp)))
         print("\nTrue Negative for each class : \n", TrueNegative)
+        print("\nTesting Accuracy : {} ".format(test_accuracy))
+        tmp=0
+        plus=0
+        for i in range(num_classes):
+            tmp = TruePositive[i] / (TruePositive[i]+FalsePositive[i])
+            plus += tmp
+        print("Precision : ", plus/48)
+        tmprecall=0
+        plusrecall=0
+        for i in range(num_classes):
+            tmprecall = TruePositive[i] / (TruePositive[i]+FalseNegative[i])
+            plusrecall += tmprecall
+        print("Recall : ", plusrecall/48)
 
         print("\nConfusion Matrix : ")
         plot_confusion_matrix(confusion)
