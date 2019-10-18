@@ -16,9 +16,9 @@ SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
 
 # Default data paths.
 DEFAULT_LABEL_FILE = os.path.join(SCRIPT_PATH,
-                                  'labels/label_nonaksara.txt')
-DEFAULT_FONTS_DIR = os.path.join(SCRIPT_PATH, 'fonts/nonaksara')
-DEFAULT_OUTPUT_DIR = os.path.join(SCRIPT_PATH, 'nonaksara')
+                                  'labels/PATH_LABEL')
+DEFAULT_FONTS_DIR = os.path.join(SCRIPT_PATH, 'fonts/PATH_FONT')
+DEFAULT_OUTPUT_DIR = os.path.join(SCRIPT_PATH, 'PATH_DIR_OUTPUT')
 
 # Number of random distortion images to generate per font and character.
 DISTORTION_COUNT = 0
@@ -40,14 +40,14 @@ def generate_aksara_images(label_file, fonts_dir, output_dir):
     with io.open(label_file, 'r', encoding='utf-8') as f:
         labels = f.read().splitlines()
 
-    image_dir = os.path.join(output_dir, 'nonaksara')
+    image_dir = os.path.join(output_dir, 'DIR_OUTPUT')
     if not os.path.exists(image_dir):
         os.makedirs(os.path.join(image_dir))
 
     # Get a list of the fonts.
     fonts = glob.glob(os.path.join(fonts_dir, '*.ttf'))
 
-    labels_csv = io.open(os.path.join(output_dir, 'labels-nonaksara.csv'), 'w',
+    labels_csv = io.open(os.path.join(output_dir, 'labels_file.csv'), 'w',
                          encoding='utf-8')
 
     total_count = 0
@@ -71,14 +71,14 @@ def generate_aksara_images(label_file, fonts_dir, output_dir):
                 fill=(255),
                 font=font
             )
-            file_string = 'nonaksara{}.jpeg'.format(total_count)
+            file_string = 'aksara{}.jpeg'.format(total_count)
             file_path = os.path.join(image_dir, file_string)
             image.save(file_path, 'JPEG')
             labels_csv.write(u'{},{}\n'.format(file_path, character))
 
             for i in range(DISTORTION_COUNT):
                 total_count += 1
-                file_string = 'nonaksara{}.jpeg'.format(total_count)
+                file_string = 'aksara{}.jpeg'.format(total_count)
                 file_path = os.path.join(image_dir, file_string)
                 arr = numpy.array(image)
 
