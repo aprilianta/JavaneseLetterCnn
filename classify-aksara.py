@@ -11,10 +11,10 @@ SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
 
 # Default paths.
 DEFAULT_LABEL_FILE = os.path.join(
-    SCRIPT_PATH, 'labels/label_font.txt'
+    SCRIPT_PATH, 'labels/label_aksara.txt'
 )
 DEFAULT_GRAPH_FILE = os.path.join(
-    SCRIPT_PATH, 'saved-model/optimized_aksara_tensorflow.pb'
+    SCRIPT_PATH, 'saved-model/dataset_aksara_model.pb'
 )
 
 

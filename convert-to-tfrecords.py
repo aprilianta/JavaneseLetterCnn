@@ -14,10 +14,10 @@ import tensorflow as tf
 SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
 
 # Default path
-DEFAULT_LABEL_CSV = os.path.join(SCRIPT_PATH, 'mycroft/labels-map-irene.csv')
+DEFAULT_LABEL_CSV = os.path.join(SCRIPT_PATH, 'mycroft/labels-file.csv')
 DEFAULT_LABEL_FILE = os.path.join(SCRIPT_PATH,
                                   'labels/label_aksara.txt')
-DEFAULT_OUTPUT_DIR = os.path.join(SCRIPT_PATH, 'tfrecords-output-irene')
+DEFAULT_OUTPUT_DIR = os.path.join(SCRIPT_PATH, 'tfrecords-dir-output')
 DEFAULT_NUM_SHARDS_TRAIN = 4     #jumlah tf_record training yg akan dibuat
 DEFAULT_NUM_SHARDS_TEST = 1      #jumlah tf_record test yg akan dibuat
 

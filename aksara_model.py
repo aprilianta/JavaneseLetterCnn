@@ -13,10 +13,10 @@ SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
 # Default paths.
 DEFAULT_LABEL_FILE = os.path.join(SCRIPT_PATH,
                                   'labels/label_aksara.txt')
-DEFAULT_TFRECORDS_DIR = os.path.join(SCRIPT_PATH, 'tfrecords-output-irene')
-DEFAULT_OUTPUT_DIR = os.path.join(SCRIPT_PATH, 'saved-model-nyobapres')
+DEFAULT_TFRECORDS_DIR = os.path.join(SCRIPT_PATH, 'tfrecords-dir-output')
+DEFAULT_OUTPUT_DIR = os.path.join(SCRIPT_PATH, 'saved-model')
 
-MODEL_NAME = 'dataset_nyobapres'
+MODEL_NAME = 'dataset_aksara_model'
 IMAGE_WIDTH = 64
 IMAGE_HEIGHT = 64
 
